@@ -111,7 +111,7 @@ jobs:
         cd $GITHUB_WORKSPACE/kernel_workspace
         java -jar bootsigner/boot_signer.jar /boot boot_unsign.img bootsigner/verity.pk8 bootsigner/verity.x509.pem boot.img
         RET = java -jar bootsigner/boot_signer.jar -verify boot.img
-        if [RET == VALID];
+        if [$RET == VALID];
         then
             echo "Boot Signature is VALID";
             echo "BOOT_SIGNATURE_VALID=true" >> $GITHUB_ENV
