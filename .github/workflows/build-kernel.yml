@@ -1,7 +1,7 @@
 name: Build Kernel
 on:
-  watch:
-    types: [started]
+  schedule:
+    - cron: '30 21 * * *'
 
   workflow_dispatch:
 
