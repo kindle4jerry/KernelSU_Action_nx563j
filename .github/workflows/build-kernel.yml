@@ -117,15 +117,7 @@ jobs:
         else
             echo "Boot Signature is not VALID";
         fi
-        
 
-    - name: Upload boot image
-      if: env.MAKE_BOOT_IMAGE_IS_OK == 'true' && env.BOOT_SIGNATURE_VALID == 'true'
-      uses: actions/upload-artifact@v3
-      with:
-        name: boot${{ env.UPLOADNAME }}-${{ env.DEVICE }}-${{ env.BUILD_TIME }}
-        path: kernel_workspace/boot.img
-        
     - name: Make permissive version
       if: env.MAKE_BOOT_IMAGE_IS_OK == 'true' && env.BOOT_SIGNATURE_VALID == 'true'
       run: |
@@ -150,5 +142,8 @@ jobs:
       if: env.MAKE_BOOTP_IMAGE_IS_OK == 'true' && env.BOOTP_SIGNATURE_VALID == 'true'
       uses: actions/upload-artifact@v3
       with:
-        name: boot_permissive${{ env.UPLOADNAME }}-${{ env.DEVICE }}-${{ env.BUILD_TIME }}
-        path: kernel_workspace/boot_permissive.img
+        name: boot${{ env.UPLOADNAME }}-${{ env.DEVICE }}-${{ env.BUILD_TIME }}
+        path: |
+          kernel_workspace/boot.img
+          kernel_workspace/boot_permissive.img
+
