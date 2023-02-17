@@ -125,3 +125,30 @@ jobs:
       with:
         name: boot${{ env.UPLOADNAME }}-${{ env.DEVICE }}-${{ env.BUILD_TIME }}
         path: kernel_workspace/boot.img
+        
+    - name: Make permissive version
+      if: env.MAKE_BOOT_IMAGE_IS_OK == 'true' && env.BOOT_SIGNATURE_VALID == 'true'
+      run: |
+        cd $GITHUB_WORKSPACE/kernel_workspace
+        tools/mkbootimg.py --header_version 0 --os_version 13.0.0 --os_patch_level 2023-01 --kernel out/kernel --ramdisk out/ramdisk --pagesize 0x00001000 --base 0x00000000 --kernel_offset 0x00008000 --ramdisk_offset 0x00000000 --second_offset 0x00000000 --tags_offset 0x00000100 --board '' --cmdline 'androidboot.hardware=qcom user_debug=31 msm_rtb.filter=0x37 ehci-hcd.park=3 lpm_levels.sleep_disabled=1 sched_enable_hmp=1 sched_enable_power_aware=1 service_locator.enable=1 swiotlb=2048 androidboot.usbconfigfs=true androidboot.usbcontroller=a800000.dwc3 loop.max_part=7 androidboot.selinux=permissive buildvariant=user veritykeyid=id:7e4333f9bba00adfe0ede979e28ed1920492b40f' -o bootp_unsign.img
+        if [ -f bootp_unsign.img ]; then
+            echo "MAKE_BOOTP_IMAGE_IS_OK=true" >> $GITHUB_ENV
+        else
+            echo "Boot image is empty"
+        fi
+        java -jar bootsigner/boot_signer.jar /boot bootp_unsign.img bootsigner/verity.pk8 bootsigner/verity.x509.pem boot.img
+        RET=$(java -jar bootsigner/boot_signer.jar -verify boot_permissive.img 2>&1)
+        if (`echo $RET | grep "VALID" >/dev/null 2>&1`);
+        then
+            echo "Boot Signature is VALID";
+            echo "BOOTP_SIGNATURE_VALID=true" >> $GITHUB_ENV
+        else
+            echo "Boot Signature is not VALID";
+        fi
+
+    - name: Upload boot image with permissive
+      if: env.MAKE_BOOTP_IMAGE_IS_OK == 'true' && env.BOOTP_SIGNATURE_VALID == 'true'
+      uses: actions/upload-artifact@v3
+      with:
+        name: boot_permissive${{ env.UPLOADNAME }}-${{ env.DEVICE }}-${{ env.BUILD_TIME }}
+        path: kernel_workspace/boot_permissive.img
