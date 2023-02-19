@@ -74,7 +74,7 @@ jobs:
         else
             echo "Source boot image is empty"
         fi
-  
+
     - name: Setup KernelSU
       if: env.USE_KERNELSU == 'true'
       run: |
@@ -103,6 +103,12 @@ jobs:
         else
             echo "Boot image is empty"
         fi
+        tools/mkbootimg.py ${{ env.FORMAT_MKBOOTING }} -o bootp_unsign.img
+        if [ -f bootp_unsign.img ]; then
+            echo "MAKE_BOOTP_IMAGE_IS_OK=true" >> $GITHUB_ENV
+        else
+            echo "Bootp image is empty"
+        fi
 
     - name: Boot Signature
       if: env.BOOT_SIGNATURE == 'true'
@@ -117,19 +123,8 @@ jobs:
         else
             echo "Boot Signature is not VALID";
         fi
-
-    - name: Make permissive version
-      if: env.MAKE_BOOT_IMAGE_IS_OK == 'true' && env.BOOT_SIGNATURE_VALID == 'true'
-      run: |
-        cd $GITHUB_WORKSPACE/kernel_workspace
-        tools/mkbootimg.py ${{ env.FORMAT_MKBOOTING }} -o bootp_unsign.img
-        if [ -f bootp_unsign.img ]; then
-            echo "MAKE_BOOTP_IMAGE_IS_OK=true" >> $GITHUB_ENV
-        else
-            echo "Boot image is empty"
-        fi
-        java -jar bootsigner/boot_signer.jar /boot bootp_unsign.img bootsigner/verity.pk8 bootsigner/verity.x509.pem boot.img
-        RET=$(java -jar bootsigner/boot_signer.jar -verify boot_permissive.img 2>&1)
+        java -jar bootsigner/boot_signer.jar /boot bootp_unsign.img bootsigner/verity.pk8 bootsigner/verity.x509.pem boot_permissive.img
+        RET=$(java -jar bootsigner/boot_signer.jar -verify boot.img 2>&1)
         if (`echo $RET | grep "VALID" >/dev/null 2>&1`);
         then
             echo "Boot Signature is VALID";
@@ -139,7 +134,7 @@ jobs:
         fi
 
     - name: Upload boot image with permissive
-      if: env.MAKE_BOOTP_IMAGE_IS_OK == 'true' && env.BOOTP_SIGNATURE_VALID == 'true'
+      if: env.MAKE_BOOT_IMAGE_IS_OK == 'true' && env.BOOT_SIGNATURE_VALID == 'true' && env.MAKE_BOOTP_IMAGE_IS_OK == 'true' && env.BOOTP_SIGNATURE_VALID == 'true'
       uses: actions/upload-artifact@v3
       with:
         name: boot${{ env.UPLOADNAME }}-${{ env.DEVICE }}-${{ env.BUILD_TIME }}
