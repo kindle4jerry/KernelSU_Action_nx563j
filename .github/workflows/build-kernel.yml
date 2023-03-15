@@ -1,5 +1,7 @@
 name: Build Kernel
 on:
+  schedule:
+    - cron: '30 21 * * 5'
 
   workflow_dispatch:
 
